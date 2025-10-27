@@ -3,10 +3,11 @@ name: Playwright CI
 on:
   push:
   pull_request:
+  workflow_dispatch:   # <-- enables manual "Run workflow" button
 
 jobs:
   test:
-    name: Run tests
+    name: Run Playwright tests
     runs-on: ubuntu-latest
 
     steps:
@@ -27,17 +28,21 @@ jobs:
 
       - name: Create .env from repo secrets
         # Add these in: Settings → Secrets and variables → Actions
-        #   BASE_URL (e.g. https://parabank.parasoft.com)
-        #   FALLBACK_TO_ACCOUNT (optional)
+        # BASE_URL (required, e.g. https://parabank.parasoft.com)
+        # FALLBACK_TO_ACCOUNT (optional)
+        # SECRET_KEY (optional; only if using SecureStore)
         run: |
           echo "BASE_URL=${{ secrets.BASE_URL }}" > .env
           if [ -n "${{ secrets.FALLBACK_TO_ACCOUNT }}" ]; then
             echo "FALLBACK_TO_ACCOUNT=${{ secrets.FALLBACK_TO_ACCOUNT }}" >> .env
           fi
+          if [ -n "${{ secrets.SECRET_KEY }}" ]; then
+            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+          fi
           cat .env
 
-      - name: Run Playwright tests (HTML + JUnit reports)
-        # Produces 'playwright-report/' and 'junit.xml'
+      # Run full suite; keep HTML + JUnit for artifacts/Pages
+      - name: Run Playwright tests (HTML + JUnit)
         run: npx playwright test --reporter="junit=./junit.xml,html"
 
       - name: Upload HTML report artifact
@@ -60,8 +65,8 @@ jobs:
 
   pages:
     name: Publish HTML report to GitHub Pages
-    # Only publish from default branch and if tests passed
     needs: test
+    # Only publish the report if tests succeeded AND we're on the default branch
     if: ${{ needs.test.result == 'success' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
