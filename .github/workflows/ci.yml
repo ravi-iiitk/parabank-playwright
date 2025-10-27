@@ -1,16 +1,88 @@
 name: Playwright CI
-on: [push, pull_request]
+
+on:
+  push:
+  pull_request:
+
 jobs:
   test:
+    name: Run tests
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 18 }
-      - run: npm ci
-      - run: npx playwright install --with-deps
-      - run: npx playwright test
-      - uses: actions/upload-artifact@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Create .env from repo secrets
+        # Add these in: Settings → Secrets and variables → Actions
+        #   BASE_URL (e.g. https://parabank.parasoft.com)
+        #   FALLBACK_TO_ACCOUNT (optional)
+        run: |
+          echo "BASE_URL=${{ secrets.BASE_URL }}" > .env
+          if [ -n "${{ secrets.FALLBACK_TO_ACCOUNT }}" ]; then
+            echo "FALLBACK_TO_ACCOUNT=${{ secrets.FALLBACK_TO_ACCOUNT }}" >> .env
+          fi
+          cat .env
+
+      - name: Run Playwright tests (HTML + JUnit reports)
+        # Produces 'playwright-report/' and 'junit.xml'
+        run: npx playwright test --reporter="junit=./junit.xml,html"
+
+      - name: Upload HTML report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload JUnit report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit
+          path: junit.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+  pages:
+    name: Publish HTML report to GitHub Pages
+    # Only publish from default branch and if tests passed
+    needs: test
+    if: ${{ needs.test.result == 'success' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+
+    steps:
+      - name: Download report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: playwright-report
+          path: public
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

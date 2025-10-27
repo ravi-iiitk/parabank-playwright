@@ -1,0 +1,73 @@
+# .gitlab-ci.yml
+# Run Playwright tests on GitLab using the official Playwright Docker image.
+# Produces: JUnit report + HTML report as artifacts (and optional Pages publish).
+
+image: mcr.microsoft.com/playwright:v1.48.0-jammy
+
+stages:
+  - install
+  - test
+  - pages
+
+cache:
+  key:
+    files:
+      - package-lock.json
+  paths:
+    - node_modules/
+
+variables:
+  NODE_ENV: test
+  # Set these in GitLab → Settings → CI/CD → Variables (masked/protected):
+  # BASE_URL                  e.g. https://parabank.parasoft.com
+  # FALLBACK_TO_ACCOUNT       e.g. 12345
+
+.install:
+  stage: install
+  script:
+    - node -v
+    - npm ci
+    # Browsers are already in this image; install system deps just in case:
+    - npx playwright install --with-deps
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1 week
+
+test:
+  stage: test
+  needs: [".install"]
+  before_script:
+    # Create a minimal .env for the tests from CI variables
+    - |
+      echo "BASE_URL=${BASE_URL}" > .env
+      if [ -n "${FALLBACK_TO_ACCOUNT}" ]; then
+        echo "FALLBACK_TO_ACCOUNT=${FALLBACK_TO_ACCOUNT}" >> .env
+      fi
+    - cat .env
+  script:
+    # Run tests; we also emit a junit.xml for GitLab's test report
+    - npx playwright test --reporter=junit,html
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
+    paths:
+      - junit.xml
+      - playwright-report/
+      - test-results/
+    expire_in: 1 week
+
+# Optional: publish HTML report to GitLab Pages at https://<group>.gitlab.io/<project>/
+pages:
+  stage: pages
+  needs: ["test"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - mkdir -p public
+    - cp -r playwright-report/* public/
+  artifacts:
+    paths:
+      - public
+    expire_in: 1 week
