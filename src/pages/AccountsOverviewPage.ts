@@ -3,15 +3,26 @@ import { expect } from '@playwright/test';
 
 export class AccountsOverviewPage extends BasePage {
   /**
-   * Parses the balances table (#accountTable).
+   * Waits robustly for the overview table:
+   * - waits for #accountTable to be attached
+   * - then waits until there's at least 1 data row AND the first data row has a link
    */
   async balances() {
-    // Wait for header + at least one data row: row index 1 must exist
-    await this.page.waitForSelector('#accountTable tr >> nth=1', { timeout: 20_000 });
+    const table = this.page.locator('#accountTable');
+    await table.waitFor({ state: 'attached', timeout: 30_000 });
+
+    await this.page.waitForFunction(() => {
+      const t = document.querySelector('#accountTable');
+      if (!t) return false;
+      const rows = t.querySelectorAll('tr');
+      if (rows.length < 2) return false;               // header + at least 1 data row
+      const firstDataRow = rows[1];
+      return !!firstDataRow.querySelector('a');        // link with account id exists
+    }, { timeout: 30_000 });
 
     const rows = this.page.locator('#accountTable tr');
-    const data: { id: string; balance: number }[] = [];
 
+    const data: { id: string; balance: number }[] = [];
     const count = await rows.count();
     for (let i = 1; i < count; i++) {
       const row = rows.nth(i);
@@ -24,16 +35,14 @@ export class AccountsOverviewPage extends BasePage {
   }
 
   /**
-   * Robust: explicitly wait until the exact account id link is visible,
-   * then confirm the parsed list includes it.
+   * Explicitly waits for the exact account-id link to appear.
    */
   async assertHasAccount(id: string) {
     const link = this.page.locator('#accountTable a', { hasText: id });
-    await expect(link).toBeVisible({ timeout: 20_000 });
+    await expect(link).toBeVisible({ timeout: 30_000 });
 
     const allIds = (await this.page.locator('#accountTable a').allTextContents())
-      .map(s => s.trim())
-      .filter(Boolean);
+      .map(s => s.trim()).filter(Boolean);
     expect(allIds).toContain(id);
   }
 }
