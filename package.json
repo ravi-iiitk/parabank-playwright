@@ -1,0 +1,21 @@
+{
+  "name": "parabank-playwright",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "PWDEBUG=1 playwright test --headed",
+    "test:e2e": "playwright test tests/e2e.parabank.spec.ts",
+    "report": "playwright show-report",
+    "lint": "echo 'add eslint/prettier if needed'"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "playwright": "^1.48.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3",
+    "zod": "^3.23.8"
+  }
+}
