@@ -9,7 +9,11 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 10_000 },
   retries: 1,
-  reporter: [['html', { open: 'never' }], ['list']],
+  // ✅ Set reporters here (don’t pass via CLI)
+  reporter: [
+    ['html',  { outputFolder: 'playwright-report', open: 'never' }],
+    ['junit', { outputFile: 'junit.xml' }]
+  ],
   use: {
     baseURL: BASE_URL,
     trace: 'on-first-retry',
@@ -17,7 +21,6 @@ export default defineConfig({
     video: 'retain-on-failure'
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'firefox', use: { ...devices['Desktop Firefox'] } }
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } }
   ]
 });

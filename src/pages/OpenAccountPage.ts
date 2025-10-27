@@ -2,31 +2,48 @@ import { BasePage } from './BasePage';
 import { expect } from '@playwright/test';
 
 export class OpenAccountPage extends BasePage {
+  /**
+   * Opens a SAVINGS account.
+   * - Uses the real IDs on the page: #type and #fromAccountId
+   * - Waits until the "fromAccount" list is truly populated (visible + options > 0)
+   * - Clicks the exact input button for "Open New Account"
+   * - Returns the new account id from #newAccountId
+   */
   async openSavings(fromAccountId?: string) {
-    // Use the real select by id (#type). ParaBank: value "1" = SAVINGS, "0" = CHECKING.
+    // The account-type select is <select id="type"> with option value "1" = SAVINGS
     await this.page.locator('#type').waitFor({ state: 'visible' });
-    await this.page.selectOption('#type', '1'); // SAVINGS
+    await this.page.selectOption('#type', { value: '1' });
 
-    // From-account options populate asynchronously after load
-    await this.page.waitForSelector('#fromAccountId', { state: 'visible', timeout: 20_000 });
-    await this.page.waitForSelector('#fromAccountId option', { state: 'attached', timeout: 20_000 });
+    // "From account" options are injected asynchronously; wait until at least one visible option exists.
+    const fromSel = this.page.locator('#fromAccountId');
+    await fromSel.waitFor({ state: 'visible' });
+
+    await this.page.waitForFunction(() => {
+      const el = document.querySelector<HTMLSelectElement>('#fromAccountId');
+      if (!el) return false;
+      const visibleOptions = [...el.options].filter(o => !o.hidden && o.value && o.textContent?.trim());
+      return visibleOptions.length > 0;
+    }, null, { timeout: 20_000 });
 
     if (fromAccountId) {
-      // Try to use the account the test asked for; fall back to the first option if missing
-      const opts = await this.page.locator('#fromAccountId option').allAttributeValues('value');
-      const pick = opts.includes(fromAccountId) ? fromAccountId : (opts[0] ?? '');
-      if (pick) await this.page.selectOption('#fromAccountId', pick);
+      await this.page.selectOption('#fromAccountId', fromAccountId);
     } else {
-      const first = await this.page.locator('#fromAccountId option').first().getAttribute('value');
+      // Pick the first *visible* option
+      const first = await this.page.evaluate(() => {
+        const el = document.querySelector<HTMLSelectElement>('#fromAccountId');
+        if (!el) return null;
+        const opt = [...el.options].find(o => !o.hidden && o.value);
+        return opt?.value ?? null;
+      });
       if (first) await this.page.selectOption('#fromAccountId', first);
     }
 
-    // Click the open button (input[type=button] value="Open New Account")
-    const openBtn = this.page.locator('input[type="button"][value="Open New Account"], button:has-text("Open New Account")');
-    await openBtn.waitFor({ state: 'visible' });
-    await openBtn.click();
+    // The button on this page is an <input type="button" value="Open New Account">
+    const btn = this.page.locator('input[type="button"][value="Open New Account"]');
+    await btn.waitFor({ state: 'visible' });
+    await btn.click();
 
-    // Result panel holds the new account id
+    // New account id appears in #newAccountId (inside the result panel)
     const newIdEl = this.page.locator('#newAccountId');
     await expect(newIdEl).toBeVisible({ timeout: 20_000 });
     const acct = (await newIdEl.textContent())?.trim() || '';
