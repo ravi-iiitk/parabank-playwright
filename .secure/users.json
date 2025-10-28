@@ -1,44 +1,96 @@
-[
-  {
-    "username": "fabric_hi1hdj",
-    "ct": "i7ks2A2hirpH",
-    "iv": "XR7f1GD9rmze0LMM",
-    "tag": "u1IZQ6vNgUusfuFjvHD7ew==",
-    "createdAt": "2025-10-27T12:45:02.676Z"
-  },
-  {
-    "username": "fabric_bmrzvu",
-    "ct": "A3i+TB5Mneth",
-    "iv": "ve6nLWoOu91t2Foq",
-    "tag": "8hOw87Iciu1z80mOJreMgA==",
-    "createdAt": "2025-10-27T12:47:13.130Z"
-  },
-  {
-    "username": "fabric_uvay51",
-    "ct": "ogESzK4EqZoO",
-    "iv": "8o5uCPG4oN/t8ANB",
-    "tag": "wJ69JKpdxM2ixzST4F8/ug==",
-    "createdAt": "2025-10-27T12:56:53.950Z"
-  },
-  {
-    "username": "fabric_apc3cp",
-    "ct": "MluSEMfg8lka",
-    "iv": "oVvWSDIs2APcIsGE",
-    "tag": "Qv3KvKRl8Micf01K7D0tIQ==",
-    "createdAt": "2025-10-27T13:10:06.828Z"
-  },
-  {
-    "username": "fabric_j9c285",
-    "ct": "RMl8YKsZiScZ",
-    "iv": "YlJJBWNnmyasRsay",
-    "tag": "z/0Xy3MYVelXSjZTulwp4w==",
-    "createdAt": "2025-10-27T18:35:34.804Z"
-  },
-  {
-    "username": "fabric_jfrr1p",
-    "ct": "1gdJq0QznQSN",
-    "iv": "LLTcyIT6/pznkEYF",
-    "tag": "81qGOZuJWmMOsC5fYx0b9w==",
-    "createdAt": "2025-10-27T18:48:56.598Z"
-  }
-]
+{
+  "version": 1,
+  "users": [
+    {
+      "username": "fabric_hi1hdj",
+      "ct": "i7ks2A2hirpH",
+      "iv": "XR7f1GD9rmze0LMM",
+      "tag": "u1IZQ6vNgUusfuFjvHD7ew==",
+      "createdAt": "2025-10-27T12:45:02.676Z"
+    },
+    {
+      "username": "fabric_bmrzvu",
+      "ct": "A3i+TB5Mneth",
+      "iv": "ve6nLWoOu91t2Foq",
+      "tag": "8hOw87Iciu1z80mOJreMgA==",
+      "createdAt": "2025-10-27T12:47:13.130Z"
+    },
+    {
+      "username": "fabric_uvay51",
+      "ct": "ogESzK4EqZoO",
+      "iv": "8o5uCPG4oN/t8ANB",
+      "tag": "wJ69JKpdxM2ixzST4F8/ug==",
+      "createdAt": "2025-10-27T12:56:53.950Z"
+    },
+    {
+      "username": "fabric_apc3cp",
+      "ct": "MluSEMfg8lka",
+      "iv": "oVvWSDIs2APcIsGE",
+      "tag": "Qv3KvKRl8Micf01K7D0tIQ==",
+      "createdAt": "2025-10-27T13:10:06.828Z"
+    },
+    {
+      "username": "fabric_j9c285",
+      "ct": "RMl8YKsZiScZ",
+      "iv": "YlJJBWNnmyasRsay",
+      "tag": "z/0Xy3MYVelXSjZTulwp4w==",
+      "createdAt": "2025-10-27T18:35:34.804Z"
+    },
+    {
+      "username": "fabric_jfrr1p",
+      "ct": "1gdJq0QznQSN",
+      "iv": "LLTcyIT6/pznkEYF",
+      "tag": "81qGOZuJWmMOsC5fYx0b9w==",
+      "createdAt": "2025-10-27T18:48:56.598Z"
+    },
+    {
+      "username": "fabric_896di",
+      "ct": "0ld0VuaNc52p",
+      "iv": "LQrE793RC4K5SQC9",
+      "tag": "dzy8o0/f6e02f8X7DNzXtQ==",
+      "createdAt": "2025-10-28T15:39:40.786Z"
+    },
+    {
+      "username": "fabric_o8e8o",
+      "ct": "0ISaqWyaxRL/",
+      "iv": "a6sl2Y12m1BNc5ih",
+      "tag": "emH0FEeb89kqJ+xu8RDkXQ==",
+      "createdAt": "2025-10-28T15:39:51.769Z"
+    },
+    {
+      "username": "fabric_37v56",
+      "ct": "Q6KcBTnDg8vV",
+      "iv": "GRYSxGpatWDcW5C0",
+      "tag": "ySx/gRZ2Yh5HaXAKyIPVGg==",
+      "createdAt": "2025-10-28T15:47:09.533Z"
+    },
+    {
+      "username": "fabric_iox79",
+      "ct": "dc3+P6aGPIyC",
+      "iv": "oX0MNDJsWeHww2TJ",
+      "tag": "kshVGXwG6q5C/P93MYi1/w==",
+      "createdAt": "2025-10-28T15:47:22.846Z"
+    },
+    {
+      "username": "fabric_ih61e",
+      "ct": "FHxY3zB3QV7b",
+      "iv": "fY4XwIop/EUDSO81",
+      "tag": "6u9jLVmSINBcM7N0ZHEYFw==",
+      "createdAt": "2025-10-28T15:52:44.747Z"
+    },
+    {
+      "username": "fabric_um43j",
+      "ct": "Zbq3Pd+bzP8H",
+      "iv": "2jQRYjOlSgUCF3Uk",
+      "tag": "mVUIysKleyFa8oJlr3gPDA==",
+      "createdAt": "2025-10-28T15:53:22.674Z"
+    },
+    {
+      "username": "fabric_3xxih",
+      "ct": "OeT2YKyBJEga",
+      "iv": "oRM8hviy20JW3G38",
+      "tag": "01yvtF4qBDKbXcH8RNFJEw==",
+      "createdAt": "2025-10-28T15:58:38.320Z"
+    }
+  ]
+}

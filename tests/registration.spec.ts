@@ -7,13 +7,11 @@ test.describe('Register only (and persist encrypted creds)', () => {
     // Go straight to Register
     await page.goto(Routes.register, { waitUntil: 'domcontentloaded' });
 
-    // Fill & submit
+    // Fill & submit using the current RegisterPage (with robust selectors)
     await pages.register.register(user);
 
     // Success text varies slightly across skins
-    await page
-      .getByText(/Your account was created successfully/i)
-      .waitFor({ state: 'visible' });
+    await page.getByText(/Your account was created successfully/i).waitFor({ state: 'visible' });
 
     // Persist username + encrypted password locally (.secure/users.json)
     await SecureStore.saveUser(user.username, user.password);

@@ -1,6 +1,6 @@
-<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="23.622742">
-<testsuite name="e2e.parabank.spec.ts" timestamp="2025-10-27T18:48:52.917Z" hostname="chromium" tests="1" failures="0" skipped="0" time="22.758" errors="0">
-<testcase name="ParaBank E2E happy path › Register → Login → Open Savings → Balances → Transfer → Bill Pay → Verify via API" classname="e2e.parabank.spec.ts" time="22.758">
+<testsuites id="" name="" tests="1" failures="0" skipped="0" errors="0" time="35.863339">
+<testsuite name="e2e.parabank.spec.ts" timestamp="2025-10-28T15:58:34.400Z" hostname="chromium" tests="1" failures="0" skipped="0" time="35.009" errors="0">
+<testcase name="ParaBank E2E happy path › Register → Login → Open Savings → Balances → Transfer → Bill Pay → Verify via API" classname="e2e.parabank.spec.ts" time="35.009">
 </testcase>
 </testsuite>
 </testsuites>
