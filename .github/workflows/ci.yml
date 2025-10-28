@@ -17,33 +17,40 @@ concurrency:
 
 jobs:
   test:
-    name: Run Playwright tests (HTML + JUnit)
+    name: Run Playwright tests (Chromium, HTML + JUnit)
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node (with npm cache)
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Install deps
         run: npm ci
 
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
-      # Run only your E2E flow on Chromium in headless mode (default on CI)
-      # Also emit JUnit so the upload step has a file to grab.
-      - name: Run tests
-        run: npx playwright test tests/e2e.parabank.spec.ts --project=chromium --reporter=html,junit
+      - name: Install Playwright (Chromium only)
+        run: npx playwright install --with-deps chromium
+
+      # Reporters are configured in playwright.config.ts (HTML + list + JUnit if you added it there)
+      - name: Run tests (Chromium only)
+        run: npx playwright test tests/e2e.parabank.spec.ts --project=chromium
         env:
           BASE_URL: https://parabank.parasoft.com
-          # If you store a real value in repo Secrets, it will override the default:
-          FALLBACK_TO_ACCOUNT: ${{ secrets.FALLBACK_TO_ACCOUNT }}
-          # SECRET_KEY only matters if tests touch SecureStore; harmless if unset.
+          FALLBACK_TO_ACCOUNT: ${{ secrets.FALLBACK_TO_ACCOUNT || '12345' }}
+          # Optional: needed if you use SecureStore in CI
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Upload HTML report artifact
@@ -52,7 +59,6 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report
-          if-no-files-found: ignore
 
       - name: Upload JUnit report artifact
         if: always()
@@ -60,7 +66,6 @@ jobs:
         with:
           name: junit
           path: junit.xml
-          if-no-files-found: ignore
 
       - name: Upload Pages artifact (HTML report)
         if: always()
@@ -72,7 +77,7 @@ jobs:
     name: Publish HTML report to GitHub Pages
     needs: test
     runs-on: ubuntu-latest
-    if: always() # publish even if tests fail
+    if: ${{ always() }}
     steps:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4

@@ -5,6 +5,8 @@
  * without hard-coding, and keeping usernames short enough for the UI.
  */
 
+import { randomBytes as nodeRandomBytes } from 'crypto';
+
 export type RegisterUser = {
   firstName: string;
   lastName: string;
@@ -18,13 +20,24 @@ export type RegisterUser = {
   password: string;
 };
 
-/** Use crypto if available (Node 18+), fallback to Math.random */
+/** Use Node crypto if available, else Web Crypto, else Math.random */
 function randBytes(n = 8): Uint8Array {
-  if (typeof crypto?.getRandomValues === 'function') {
+  // 1) Prefer Node's crypto (always present in CI on Node 18)
+  try {
+    return nodeRandomBytes(n);
+  } catch {
+    // ignore and try web crypto
+  }
+
+  // 2) Try Web Crypto (browser-like environments)
+  const g: any = globalThis as any;
+  if (g?.crypto?.getRandomValues instanceof Function) {
     const b = new Uint8Array(n);
-    crypto.getRandomValues(b);
+    g.crypto.getRandomValues(b);
     return b;
   }
+
+  // 3) Last-resort fallback (non-cryptographic)
   const b = new Uint8Array(n);
   for (let i = 0; i < n; i++) b[i] = Math.floor(Math.random() * 256);
   return b;
@@ -63,14 +76,14 @@ export function uniqueUsername(prefix = 'qa'): string {
  * Short unique username to avoid UI length issues.
  * Max 12 chars by default (configurable).
  */
-export function uniqueUsernameShort(prefix = 'qa', maxLen = 12): string {
+export function uniqueUsernameShort(prefix = 'qa', maxUserLen = 12): string {
   // Ensure we always have at least 3 random chars
   const minRand = 3;
   const sep = '_';
-  const cleanPrefix = sanitizeUsername(prefix, maxLen);
-  const room = Math.max(minRand, maxLen - (cleanPrefix.length + sep.length));
+  const cleanPrefix = sanitizeUsername(prefix, maxUserLen);
+  const room = Math.max(minRand, maxUserLen - (cleanPrefix.length + sep.length));
   const rand = randBase36(room);
-  return sanitizeUsername(`${cleanPrefix}${sep}${rand}`, maxLen);
+  return sanitizeUsername(`${cleanPrefix}${sep}${rand}`, maxUserLen);
 }
 
 /** Random-but-valid US-style SSN string: XXX-XX-XXXX */
@@ -95,7 +108,9 @@ export function randomZip(len: 5 | 6 = 6): string {
  * Minimal customer fields used by the registration form (no username/password).
  * Keep strings realistic but neutral—override via params for locale-specific data.
  */
-export function fakeCustomer(overrides?: Partial<Omit<RegisterUser, 'username' | 'password'>>) {
+export function fakeCustomer(
+  overrides?: Partial<Omit<RegisterUser, 'username' | 'password'>>
+) {
   const rand = randBase36(4);
   return {
     firstName: `Ravi${rand}`,
@@ -115,14 +130,12 @@ export function fakeCustomer(overrides?: Partial<Omit<RegisterUser, 'username' |
  * - No hard-coded username length (defaults to 12 max)
  * - Deterministic structure, randomized values
  */
-export function buildRegisterUser(
-  opts?: {
-    prefix?: string;
-    maxUserLen?: number;
-    password?: string;
-    overrides?: Partial<Omit<RegisterUser, 'username' | 'password'>>;
-  }
-): RegisterUser {
+export function buildRegisterUser(opts?: {
+  prefix?: string;
+  maxUserLen?: number;
+  password?: string;
+  overrides?: Partial<Omit<RegisterUser, 'username' | 'password'>>;
+}): RegisterUser {
   const {
     prefix = process.env.USER_PREFIX || 'qa',
     maxUserLen = 12,
