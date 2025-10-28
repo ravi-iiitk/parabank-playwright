@@ -10,17 +10,24 @@ import { BillPayPage } from '../pages/BillPayPage';
 import { BankAPI } from '../utils/apiClient';
 import { fakeCustomer, uniqueUsernameShort } from '../utils/data';
 
+export type Pages = {
+  home: HomePage;
+  register: RegisterPage;
+  login: LoginPage;
+  openAccount: OpenAccountPage;
+  overview: AccountsOverviewPage;
+  transfer: TransferFundsPage;
+  billpay: BillPayPage;
+};
+
+type UserData = { username: string; password: string } & ReturnType<typeof fakeCustomer>;
+
+const USER_PREFIX = process.env.USER_PREFIX || 'fabric';
+const DEFAULT_PASSWORD = process.env.DEFAULT_PASSWORD || 'Passw0rd!';
+
 export const test = base.extend<{
-  pages: {
-    home: HomePage,
-    register: RegisterPage,
-    login: LoginPage,
-    openAccount: OpenAccountPage,
-    overview: AccountsOverviewPage,
-    transfer: TransferFundsPage,
-    billpay: BillPayPage,
-  };
-  user: { username: string; password: string } & ReturnType<typeof fakeCustomer>;
+  pages: Pages;
+  user: UserData;
   api: typeof BankAPI;
 }>({
   pages: async ({ page }, use) => {
@@ -37,12 +44,14 @@ export const test = base.extend<{
 
   user: async ({}, use) => {
     const baseData = fakeCustomer();
-    const username = uniqueUsernameShort('fabric'); // short, unique
-    const password = 'Passw0rd!';
+    const username = uniqueUsernameShort(USER_PREFIX); // short, unique
+    const password = DEFAULT_PASSWORD;
     await use({ ...baseData, username, password });
   },
 
-  api: async ({}, use) => { await use(BankAPI); }
+  api: async ({}, use) => {
+    await use(BankAPI);
+  },
 });
 
 export const expectEx = expect;

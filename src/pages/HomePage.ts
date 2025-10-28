@@ -1,8 +1,9 @@
+// src/pages/HomePage.ts
 import { BasePage } from './BasePage';
 import { Locator, expect } from '@playwright/test';
 
-type LeftItem = { label: string; path: string };
-type HeaderItem = { label: string; path?: string; href?: string };
+export type LeftItem   = { label: string; path: string };
+export type HeaderItem = { label: string; path?: string; href?: string };
 
 export class HomePage extends BasePage {
   // Left “Account Services” links
@@ -18,25 +19,51 @@ export class HomePage extends BasePage {
     return this.page.locator('#headerPanel ul.leftmenu li');
   }
 
+  /** Normalize text helper */
+  private static norm(s?: string | null) {
+    return (s ?? '').replace(/\s+/g, ' ').trim();
+  }
+
   /** Ensure left nav rendered */
-  private async waitLeftNavReady() {
-    await expect(this.page.locator('#leftPanel h2')).toHaveText('Account Services');
-    await expect(this.navLinks.first()).toBeVisible();
+  private async waitLeftNavReady(minLinks = 3) {
+    const title = this.page.locator('#leftPanel h2');
+    await expect(title).toBeVisible({ timeout: 20_000 });
+    await expect(title).toHaveText(/account services/i);
+
+    const links = this.navLinks;
+    await expect(links.first()).toBeVisible({ timeout: 20_000 });
+
+    const count = await links.count();
+    expect(count).toBeGreaterThanOrEqual(minLinks);
   }
 
   /** Ensure header menu rendered */
   private async waitHeaderReady() {
-    await expect(this.headerLis.first()).toBeVisible();
+    await expect(this.headerLis.first()).toBeVisible({ timeout: 20_000 });
   }
 
   /** Return visible left nav texts */
   async getNavTexts(): Promise<string[]> {
     await this.waitLeftNavReady();
     const texts = await this.navLinks.allTextContents();
-    return texts.map(s => s.trim()).filter(Boolean);
+    return texts.map(HomePage.norm).filter(Boolean);
   }
 
-  /** Verify left “Account Services” navigation */
+  /** Assert left nav contains all labels (order not enforced) */
+  async assertLeftNavContains(labels: string[]) {
+    const got = await this.getNavTexts();
+    for (const lbl of labels) expect(got).toContain(lbl);
+  }
+
+  /** Click an item in left nav by its text */
+  async clickLeftNav(label: string) {
+    await this.waitLeftNavReady();
+    const link = this.navLinks.filter({ hasText: label }).first();
+    await expect(link, `Left nav link "${label}" should be visible`).toBeVisible();
+    await link.click();
+  }
+
+  /** Verify left “Account Services” navigation targets */
   async verifyAccountServicesNavigation(items: LeftItem[]) {
     await this.waitLeftNavReady();
     for (const it of items) {
@@ -47,7 +74,7 @@ export class HomePage extends BasePage {
     }
   }
 
-  /** Verify header navigation (Solutions may be a plain <li>) */
+  /** Verify header navigation (note: “Solutions” may be a plain <li> without a link) */
   async verifyHeaderNavigation(items: HeaderItem[]) {
     await this.waitHeaderReady();
     for (const it of items) {

@@ -1,36 +1,52 @@
-import { test, expectEx } from '../src/fixtures/test-fixtures';
+import { test } from '../src/fixtures/test-fixtures';
 import { SecureStore } from '../src/utils/secureStore';
 import { Routes } from '../src/config/routes';
 
+const TRANSFER_AMOUNT = Number(process.env.TRANSFER_AMOUNT || 10);
+
 test.describe('Login → Transfer Funds (using saved creds)', () => {
-  test('login and transfer between two visible accounts', async ({ page, pages }) => {
-    // Load latest saved user
+  test('login and transfer between two visible accounts with balance assertions', async ({ page, pages }) => {
+    // ── Load last saved credentials ────────────────────────────────────────────
     const { username, password } = await SecureStore.loadLatestUser();
 
-    // Login
-    await page.goto(Routes.login);
+    // ── Login & sanity checks ─────────────────────────────────────────────────
+    await page.goto(Routes.login, { waitUntil: 'domcontentloaded' });
     await pages.login.login(username, password);
+    await pages.login.assertLoggedIn();
 
-    // Ensure we have at least two accounts; if only one, open a new savings
-    await page.goto(Routes.accountsOverview);
-    let balances = await pages.overview.balances();
-    if (balances.length < 2) {
-      await page.goto(Routes.openAccount);
+    // ── Ensure we have at least two accounts; open one if needed ─────────────
+    await page.goto(Routes.accountsOverview, { waitUntil: 'domcontentloaded' });
+    let ids = await pages.overview.getAllAccountIds();
+
+    if (ids.length < 2) {
+      await page.goto(Routes.openAccount, { waitUntil: 'domcontentloaded' });
       const newId = await pages.openAccount.openSavings();
-      await page.goto(Routes.accountsOverview);
+      await page.goto(Routes.accountsOverview, { waitUntil: 'domcontentloaded' });
       await pages.overview.assertHasAccount(newId);
-      balances = await pages.overview.balances();
+      ids = await pages.overview.getAllAccountIds();
     }
 
-    const fromId = balances[0].id;
-    const toId = balances.find(a => a.id !== fromId)?.id ?? balances[0].id;
+    // Pick two distinct accounts
+    const fromId = ids[0];
+    const toId   = ids.find(x => x !== fromId) ?? ids[0];
 
-    // Transfer
-    await page.goto(Routes.transfer);
-    await pages.transfer.transfer(10, fromId, toId);
+    // ── Capture balances before ───────────────────────────────────────────────
+    const beforeFrom = await pages.overview.getBalanceById(fromId);
+    const beforeTo   = await pages.overview.getBalanceById(toId);
 
-    // Soft success hint
+    // ── Transfer ──────────────────────────────────────────────────────────────
+    await page.goto(Routes.transfer, { waitUntil: 'domcontentloaded' });
+    await pages.transfer.transfer(TRANSFER_AMOUNT, fromId, toId);
+
+    // Soft success hint (UI variants tolerated)
     await page.getByText(/Transfer Complete!?/i).waitFor({ state: 'visible' }).catch(() => {});
-    expectEx(await page.locator('#amount').inputValue()).toBe('');
+
+    // ── Verify deltas in Accounts Overview ────────────────────────────────────
+    await page.goto(Routes.accountsOverview, { waitUntil: 'domcontentloaded' });
+    await pages.overview.assertHasAccount(fromId);
+    await pages.overview.assertHasAccount(toId);
+
+    await pages.overview.assertBalanceDelta(fromId, beforeFrom, -TRANSFER_AMOUNT);
+    await pages.overview.assertBalanceDelta(toId,   beforeTo,   +TRANSFER_AMOUNT);
   });
 });

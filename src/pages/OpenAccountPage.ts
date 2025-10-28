@@ -1,53 +1,61 @@
+// src/pages/OpenAccountPage.ts
 import { BasePage } from './BasePage';
 import { expect } from '@playwright/test';
 
 export class OpenAccountPage extends BasePage {
   /**
-   * Opens a SAVINGS account.
-   * - Uses the real IDs on the page: #type and #fromAccountId
-   * - Waits until the "fromAccount" list is truly populated (visible + options > 0)
-   * - Clicks the exact input button for "Open New Account"
-   * - Returns the new account id from #newAccountId
+   * Opens a SAVINGS account and returns the new account id.
+   * - Uses real IDs: #type (value "1" = SAVINGS), #fromAccountId
+   * - Relies on BasePage.selectOptionByValue to avoid timing flakes
+   * - Clicks the exact <input type="button" value="Open New Account">
+   * - Asserts success panel and extracts #newAccountId
    */
   async openSavings(fromAccountId?: string) {
-    // The account-type select is <select id="type"> with option value "1" = SAVINGS
-    await this.page.locator('#type').waitFor({ state: 'visible' });
-    await this.page.selectOption('#type', { value: '1' });
+    // Ensure we're on the page and form is visible
+    await this.goto('/parabank/openaccount.htm');
+    await this.page.locator('#openAccountForm').waitFor({ state: 'visible', timeout: 20_000 });
 
-    // "From account" options are injected asynchronously; wait until at least one visible option exists.
-    const fromSel = this.page.locator('#fromAccountId');
-    await fromSel.waitFor({ state: 'visible' });
+    // 1) Select SAVINGS (ParaBank uses value "1" for SAVINGS)
+    await this.selectOptionByValue('#type', '1');
 
-    await this.page.waitForFunction(() => {
-      const el = document.querySelector<HTMLSelectElement>('#fromAccountId');
-      if (!el) return false;
-      const visibleOptions = [...el.options].filter(o => !o.hidden && o.value && o.textContent?.trim());
-      return visibleOptions.length > 0;
-    }, null, { timeout: 20_000 });
-
+    // 2) Ensure "From account" options are present and select either provided id or first visible
+    //    (selectOptionByValue will itself wait until the requested value exists)
     if (fromAccountId) {
-      await this.page.selectOption('#fromAccountId', fromAccountId);
+      await this.selectOptionByValue('#fromAccountId', fromAccountId);
     } else {
-      // Pick the first *visible* option
-      const first = await this.page.evaluate(() => {
+      // Discover the first visible option value (robust against empty/populating lists)
+      const firstVal = await this.page.evaluate(() => {
         const el = document.querySelector<HTMLSelectElement>('#fromAccountId');
         if (!el) return null;
-        const opt = [...el.options].find(o => !o.hidden && o.value);
+        const opt = Array.from(el.options).find(o => !o.hidden && o.value && (o.textContent ?? '').trim());
         return opt?.value ?? null;
       });
-      if (first) await this.page.selectOption('#fromAccountId', first);
+      if (!firstVal) throw new Error('No visible options found in #fromAccountId');
+      await this.selectOptionByValue('#fromAccountId', firstVal);
     }
 
-    // The button on this page is an <input type="button" value="Open New Account">
+    // 3) Submit
     const btn = this.page.locator('input[type="button"][value="Open New Account"]');
-    await btn.waitFor({ state: 'visible' });
+    await btn.waitFor({ state: 'visible', timeout: 10_000 });
     await btn.click();
 
-    // New account id appears in #newAccountId (inside the result panel)
+    // 4) Assert success panel, title and capture the new account id
+    const resultPanel = this.page.locator('#openAccountResult');
+    await resultPanel.waitFor({ state: 'visible', timeout: 20_000 });
+
+    // Title is typically "Account Opened!"
+    await expect(resultPanel.locator('h1.title')).toHaveText(/Account Opened!?/i);
+
+    // New account link/id
     const newIdEl = this.page.locator('#newAccountId');
     await expect(newIdEl).toBeVisible({ timeout: 20_000 });
-    const acct = (await newIdEl.textContent())?.trim() || '';
+
+    const acct = (await newIdEl.textContent())?.trim() ?? '';
     expect(acct).toMatch(/^\d+$/);
+
+    // Optional: the link should point to activity.htm?id=<acct>
+    const href = (await newIdEl.getAttribute('href')) ?? '';
+    expect(href).toContain(`activity.htm?id=${acct}`);
 
     return acct;
   }
