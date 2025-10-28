@@ -2,12 +2,25 @@
   "name": "parabank-playwright",
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
+    "prepare": "playwright install --with-deps",
+
     "test": "playwright test",
-    "test:headed": "PWDEBUG=1 playwright test --headed",
-    "test:e2e": "playwright test tests/e2e.parabank.spec.ts",
+    "test:chromium": "playwright test --project=chromium",
+    "test:setup": "playwright test --project=setup",
+    "test:e2e": "playwright test --project=chromium-e2e",
+
+    "test:flow": "playwright test --project=setup --project=chromium-open-account --project=chromium-transfer --project=chromium-billpay",
+
+    "test:headed": "playwright test --headed --project=chromium",
     "report": "playwright show-report",
-    "lint": "echo 'add eslint/prettier if needed'"
+    "trace:open": "playwright show-trace test-results/**/trace.zip",
+
+    "ci:e2e": "playwright test --project=chromium-e2e",
+    "lint": "echo \"add eslint/prettier if needed\""
   },
   "devDependencies": {
     "@playwright/test": "^1.48.0",
