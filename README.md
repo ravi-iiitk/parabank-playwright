@@ -1,4 +1,3 @@
-Awesome—here’s a fully updated README you can drop in as-is. I kept your original structure and wording, and only added/adjusted pieces so it matches the current codebase, scripts, config, and CI.
 
 ---
 
