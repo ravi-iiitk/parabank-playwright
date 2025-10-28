@@ -35,26 +35,35 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
-      # 👇 No --reporter here; reporters are configured in playwright.config.ts
+      # Run only your E2E flow on Chromium in headless mode (default on CI)
+      # Also emit JUnit so the upload step has a file to grab.
       - name: Run tests
-        run:  npx playwright test tests/e2e.parabank.spec.ts --project=chromium
+        run: npx playwright test tests/e2e.parabank.spec.ts --project=chromium --reporter=html,junit
         env:
           BASE_URL: https://parabank.parasoft.com
-          FALLBACK_TO_ACCOUNT: ${{ secrets.FALLBACK_TO_ACCOUNT || '12345' }}
+          # If you store a real value in repo Secrets, it will override the default:
+          FALLBACK_TO_ACCOUNT: ${{ secrets.FALLBACK_TO_ACCOUNT }}
+          # SECRET_KEY only matters if tests touch SecureStore; harmless if unset.
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Upload HTML report artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report
+          if-no-files-found: ignore
 
       - name: Upload JUnit report artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: junit
           path: junit.xml
+          if-no-files-found: ignore
 
       - name: Upload Pages artifact (HTML report)
+        if: always()
         uses: actions/upload-pages-artifact@v3
         with:
           path: playwright-report
@@ -63,7 +72,7 @@ jobs:
     name: Publish HTML report to GitHub Pages
     needs: test
     runs-on: ubuntu-latest
-    if: ${{ always() }} # publish even if tests fail
+    if: always() # publish even if tests fail
     steps:
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
